@@ -1,0 +1,114 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+  <meta charset="UTF-8">
+  <title>Crynova CEO Oyunu</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <script src="https://telegram.org/js/telegram-web-app.js"></script>
+
+  <!-- Firebase SDK -->
+  <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore-compat.js"></script>
+
+  <style>
+    body {
+      background-color: #1a1a1a;
+      color: white;
+      font-family: 'Segoe UI', sans-serif;
+      text-align: center;
+      padding: 20px;
+    }
+    .balance { margin: 20px 0; font-size: 18px; }
+    .card {
+      background: #2a2a2a;
+      border-radius: 16px;
+      padding: 16px;
+      margin: 12px auto;
+      width: 90%;
+    }
+    .card h3 { margin: 0; }
+    .card button {
+      margin-top: 10px;
+      padding: 10px 20px;
+      background-color: #00c853;
+      color: white;
+      border: none;
+      border-radius: 8px;
+      font-size: 16px;
+      cursor: pointer;
+    }
+  </style>
+</head>
+<body>
+  <h2>Hoş Geldin, <span id="username">Oyuncu</span> 👋</h2>
+  <div class="balance">💰 Crynova Coin: <span id="coins">0</span></div>
+
+  <div class="card">
+    <h3>🖥️ Sunucu Kirala</h3>
+    <p>Coin üretimin artar.</p>
+    <button onclick="upgrade(10)">10 Coin</button>
+  </div>
+
+  <script>
+    // 1. Firebase Bağlantısı
+    const firebaseConfig = {
+  apiKey: "AIzaSyAeg-c9SZigkPQ6b-D7UaS0GUSEGTgz8Qo",
+  authDomain: "cyrnova.firebaseapp.com",
+  projectId: "cyrnova",
+  storageBucket: "cyrnova.firebasestorage.app",
+  messagingSenderId: "1070611094863",
+  appId: "1:1070611094863:web:34e7d38fa3b60b5a09393a",
+  measurementId: "G-JS3M31QM64"
+};
+
+// Initialize Firebase
+const app = initializeApp(firebaseConfig);
+const analytics = getAnalytics(app);
+    };
+
+    firebase.initializeApp(firebaseConfig);
+    const db = firebase.firestore();
+
+    // 2. Telegram Kullanıcısı
+    const tgUser = Telegram.WebApp.initDataUnsafe?.user;
+    const userId = tgUser?.id;
+    document.getElementById("username").innerText = tgUser?.first_name || "Oyuncu";
+
+    let coins = 0;
+    const coinsEl = document.getElementById("coins");
+
+    // 3. Firebase'den veri çek
+    async function loadCoins() {
+      const doc = await db.collection("users").doc(userId.toString()).get();
+      if (doc.exists) {
+        coins = doc.data().coins || 0;
+        coinsEl.innerText = coins;
+      } else {
+        await db.collection("users").doc(userId.toString()).set({ coins: 0 });
+      }
+    }
+
+    // 4. Coin Yükseltmesi
+    async function upgrade(cost) {
+      if (coins >= cost) {
+        coins -= cost;
+        coinsEl.innerText = coins;
+        await db.collection("users").doc(userId.toString()).update({ coins });
+        alert("Yükseltme başarılı!");
+      } else {
+        alert("Yetersiz coin!");
+      }
+    }
+
+    // 5. Başlangıç coin kazandır
+    async function giveLoginCoin() {
+      coins += 1;
+      coinsEl.innerText = coins;
+      await db.collection("users").doc(userId.toString()).update({ coins });
+    }
+
+    Telegram.WebApp.ready();
+    loadCoins().then(() => giveLoginCoin());
+  </script>
+</body>
+</html>
